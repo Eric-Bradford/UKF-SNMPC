@@ -2,7 +2,7 @@
 The code in this repository is based on the works in [[1]](#1)[[2]](#2) and is written in Python. For more information on the required modules and packages refer to section [Technical requirements](#Tr). It is a variation of an unscented kalman filter stochastic nonlinear model predictive control (UKF-SNMPC) algorithm. To cite UKF-SNMPC please use the publications [[1]](#1)[[2]](#2). 
 
 ## Getting started
-
+First install the required technical prerequisites and download the Python files contained in this repository. Next run [Simulation_UKF_SNMPC](/Simulation_UKF_SNMPC.py), which should run the pre-defined problem. Once this works the problem definition can be edited in [UKF_SNMPC_problem_definition](/UKF_SNMPC_problem_definition.py) to define your own problem. The code automatically outputs a data library for analysis and plots to be employed in for example Matlab or Python.    
 
 ## Description
 Model predictive control (MPC) is a popular control method, which is however reliant on an accurate dynamic model. Many dynamic systems however are affected by significant uncertainties often leading to a lower performance and significant constraint violations. In this algorithm we assume that a nonlinear system is affected by known stochastic parametric uncertainties leading to a stochastic nonlinear MPC (SNMPC) approach. The square-root Unscented Kalman filter (UKF) equations are used in this context for both estimation and propagation of mean and covariance of the states by generating separate scenarios as shown in the figure above. The uncertainty description is used to optimize an objective in expectation and employ chance-constraints to maintain feasibility despite the presence of the stochastic uncertainties. The covariance of the nonlinear constraints is found using linearization. The dynamic equation system is assumed to be given by differential algebraic equations (DAE). Further description on the theory can be found in [[1]](#1)[[2]](#2). 
@@ -31,7 +31,7 @@ The code was written using [CasADi](https://web.casadi.org/) in Python 2.7 and h
 <a name="1">
 </a>
 
-[2] E. Bradford, and L. Imsland, [Economic stochastic model predictive control using the unscented Kalman filter](https://brage.bibsys.no/xmlui/bitstream/handle/11250/2568350/1-s2.0-S2405896318320196-main.pdf?sequence=5), IFAC-PapersOnLine, vol. 51, no. 18, pp. 417-422. 
+[2] E. Bradford, and L. Imsland, [Economic stochastic model predictive control using the unscented Kalman filter](https://brage.bibsys.no/xmlui/bitstream/handle/11250/2568350/1-s2.0-S2405896318320196-main.pdf?sequence=5), IFAC-PapersOnLine, vol. 51, no. 18, pp. 417-422, 2018. 
 <a name="2">
 </a>
 
