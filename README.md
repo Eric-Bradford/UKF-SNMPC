@@ -1,5 +1,5 @@
 # Unscented Kalman filter stochastic nonlinear model predictive control
-The code in this repository is based on the works outlined in [[1]](#1)[[2]](#2) and is written in Python. For more information on the required modules and packages refer to section [Technical requirements](#Tr). It is a variation of an unscented kalman filter stochastic nonlinear model predictive control (UKF-SNMPC) algorithm. To cite UKF-SNMPC please use the publications [[1]](#1)[[2]](#2). 
+The code in this repository is based on the works in [[1]](#1)[[2]](#2) and is written in Python. For more information on the required modules and packages refer to section [Technical requirements](#Tr). It is a variation of an unscented kalman filter stochastic nonlinear model predictive control (UKF-SNMPC) algorithm. To cite UKF-SNMPC please use the publications [[1]](#1)[[2]](#2). 
 
 ## Getting started
 
