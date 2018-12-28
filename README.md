@@ -17,7 +17,7 @@ Model predictive control (MPC) is a popular control method, which is however rel
 * Efficient solution of nonlinear dynamic optimization formulation using automatic differentiation
 
 ## Applications
-The algorithm has been shown in [[1]](#1)[[2]](#2) as an efficient tool for the control of a batch process in a shrinking horizon, which is an example of a highly nonlinear and unsteady-state system. These are described by first-principles derived DAEs. See below for example the improved temperature control of the proposed algorithm compared to a nominal NMPC using soft-constraints.
+The algorithm has been shown in [[1]](#1)[[2]](#2) as an efficient tool for the control of a batch process in a shrinking horizon, which is an example of a highly nonlinear and unsteady-state system. These are described by first-principles DAEs. See below for example the improved temperature control of the proposed algorithm compared to a nominal NMPC using soft-constraints.
 
 <img src="/images/Image2.jpg" width="800">
 
