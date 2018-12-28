@@ -3,8 +3,9 @@ The open-source code in this repository is based on the works outlined in [[1]](
 
 ## Getting started
 
+
 ## Description
-<img src="/Images/Image1.jpg" width="400">
+<img src="/images/Image1.jpg" width="500">
 Model predictive control (MPC) is a popular control method, which is however reliant on an accurate dynamic model. Many dynamic systems however are affected by significant uncertainties often leading to a lower performance and significant constraint violations. In this algorithm we assume that a nonlinear system is affected by known stochastic parametric uncertainties leading to a stochastic nonlinear MPC (SNMPC) approach. The square-root Unscented Kalman filter (UKF) equations are used in this context for both estimation and propagation of mean and covariance of the states by generating separate scenarios as shown in the figure above. The uncertainty description is used to optimize an objective in expectation and employ chance-constraints to maintain feasibility despite the presence of the stochastic uncertainties. The dynamic equation system is assumed to be given by differential algebraic equations (DAE). A full description on the theory can be found in [[1]](#1)[[2]](#2).  
 
 ## Features & benefits
@@ -12,11 +13,12 @@ Model predictive control (MPC) is a popular control method, which is however rel
 * Parameter and state estimation using the square-root UKF
 * Nonlinear chance constraints on states to maintain feasibility
 * Robust horizon up to which uncertainties are propagated to prevent the growth of open-loop uncertainties
-* Efficient solution of nonlinear program using automatic differentiation
+* Efficient solution of nonlinear dynamic optimization formulation using automatic differentiation
 
 ## Applications
-The algorithm has been shown in [[1]](#1)[[2]](#2) as an efficient tool for the control of a batch process in a shrinking horizon, which is an example of a highly nonlinear and unsteady-state system. These were described by first-principles derived DAEs. See below for example the improved temperature control of the proposed algorithm compared to a nominal NMPC using chance-constraints.
-<img src="/Images/Image2.jpg" width="400">
+The algorithm has been shown in [[1]](#1)[[2]](#2) as an efficient tool for the control of a batch process in a shrinking horizon, which is an example of a highly nonlinear and unsteady-state system. These were described by first-principles derived DAEs. See below for example the improved temperature control of the proposed algorithm compared to a nominal NMPC using soft-constraints.
+
+<img src="/images/Image2.jpg" width="800">
 
 ## Technical requirements
 The code was written using [CasADi](https://web.casadi.org/) in Python 2.7 and hence requires [CasADi](https://web.casadi.org/) with all its sub-dependencies. Simply download a Python 2.7 distribution such as [Python(x,y)](https://python-xy.github.io/) and install CasADi following the [instructions](https://github.com/casadi/casadi/wiki/InstallationInstructions). The HSL linear solvers are also required for IPOPT to work well, see [Obtaining-HSL](https://github.com/casadi/casadi/wiki/Obtaining-HSL) for more information.
