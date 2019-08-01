@@ -31,7 +31,7 @@ The code was written using [CasADi](https://web.casadi.org/) in Python 2.7 and h
 <a name="1">
 </a>
 
-[2] E. Bradford, and L. Imsland, [Economic stochastic model predictive control using the unscented Kalman filter](https://brage.bibsys.no/xmlui/bitstream/handle/11250/2568350/1-s2.0-S2405896318320196-main.pdf?sequence=5), IFAC-PapersOnLine, vol. 51, no. 18, pp. 417-422, 2018. 
+[2] E. Bradford, and L. Imsland, [Economic stochastic model predictive control using the unscented Kalman filter](https://www.sciencedirect.com/science/article/pii/S2405896318320196), IFAC-PapersOnLine, vol. 51, no. 18, pp. 417-422, 2018. 
 <a name="2">
 </a>
 
