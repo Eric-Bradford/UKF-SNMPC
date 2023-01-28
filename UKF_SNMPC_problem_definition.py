@@ -29,7 +29,7 @@ def specifications():
     opts["expand"]                      = True
     opts["ipopt.max_iter"]              = 10000
     opts["ipopt.tol"]                   = 1e-8
-    opts['ipopt.linear_solver']         = 'ma27'
+    opts['ipopt.linear_solver']         = 'mumps' # ma27
     opts["ipopt.warm_start_init_point"] = "yes"
           
     return tf, nk, shrinking_horizon, deg, cp, nicp, simulation_time, opts, \
@@ -77,7 +77,7 @@ def DAE_system():
     CovP  = [0.1,0.00016,0.2,5.]*diag(np.ones(nun))
     xu    = SX.sym('xu',nun)  
     for i in range(nun):
-        globals()[unpar[i]] = xu[i]
+        globals()[unpar[i]] = SX(xu[i])
     
     # Actual mean and covariance of differential states at t = 0        
     Meanx0   = np.array([0.5,1.,0.1,290.,100.])

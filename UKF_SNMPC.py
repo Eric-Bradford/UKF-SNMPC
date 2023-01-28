@@ -330,7 +330,7 @@ class UKF_SNMPC:
               R1[k,k+1:p1] = (R1[k,k+1:p1] + s*x1[k+1:p1])/c
             elif sign1 == '-':
               R1[k,k+1:p1] = (R1[k,k+1:p1] - s*x1[k+1:p1])/c
-            x1[k+1:p1]= c*x1[k+1:p1] - s*R1[k,k+1:p1]
+            x1[:,k+1:p1]= c*x1[k+1:p1] - s*R1[k,k+1:p1]
             
       return R1
     
@@ -350,7 +350,12 @@ class UKF_SNMPC:
         residual = mtimes(Sum_mean_matrix1,diag(sqrt(fabs(nu_c))))
         
         Aux = transpose(horzcat(residual[:,1:ns],sqrt_Sigma_w))
-        Sigma_prediction_a = qr(Aux)[1]
+        
+        Aux_sym = SX.sym('Aux_sym',Aux.size())
+        qr_output = qr(Aux_sym)[1]
+        qr_new = Function('qr_new',[Aux_sym],[qr_output])
+
+        Sigma_prediction_a = qr_new(Aux)
         
         if nu_c[0] < 0:
             Sigma_prediction = cholupdate(Sigma_prediction_a,residual[:,0],'-')
@@ -378,7 +383,11 @@ class UKF_SNMPC:
         residual_m = mtimes(Sum_mean1_matrix_m,diag(sqrt(fabs(nu_c))))
         
         Aux = transpose(horzcat(residual_m[:,1:ns],sqrt_Sigma_v))
-        Sigma_prediction_a_m = qr(Aux)[1]
+        Aux_sym = SX.sym('Aux_sym',Aux.size())
+        qr_output = qr(Aux_sym)[1]
+        qr_new = Function('qr_new',[Aux_sym],[qr_output])
+
+        Sigma_prediction_a_m = qr_new(Aux)
         Sigma_prediction_a_m = Sigma_prediction_a_m[:nm,:]
         
         if nu_c[0] < 0:
@@ -390,10 +399,26 @@ class UKF_SNMPC:
 
     def Sigma_points(self,x_hat_before,Sigma_before_chol,nun,sqrt_CovP,MeanP,nd,lambda_ukf,n_L):
         ns               = self.ns
-        x_hat_a_previous = vertcat(x_hat_before,MeanP)
         
-        sqrt_Sigma_previous         = Sigma_before_chol
-        horizontal_stack_sqrt_Sigma = horzcat(sqrt_Sigma_previous,SX.zeros(nd,nun))
+        if type(x_hat_before) is not SX:
+            x_hat_before_SX = SX.sym('x_hat_before_SX',x_hat_before.size)
+            for v, val in enumerate(x_hat_before):
+                x_hat_before_SX[v] = val
+        else:
+            x_hat_before_SX = x_hat_before
+        
+        x_hat_a_previous = vertcat(x_hat_before_SX,SX(MeanP))
+
+        sqrt_Sigma_previous = Sigma_before_chol
+        if type(sqrt_Sigma_previous) is not SX:
+            sqrt_Sigma_previous_SX = SX.sym('sqrt_Sigma_previous_SX',nd,nd)
+            for v1, val1 in enumerate(sqrt_Sigma_previous):
+                for v2, val2 in enumerate(val1):
+                    sqrt_Sigma_previous_SX[v1,v2] = val2
+        else:
+            sqrt_Sigma_previous_SX = sqrt_Sigma_previous
+        
+        horizontal_stack_sqrt_Sigma = horzcat(sqrt_Sigma_previous_SX,SX.zeros(nd,nun))
         horizontal_stack_sqrt_P     = horzcat(SX.zeros(nun,nd),sqrt_CovP)
         sqrt_Sigma_a_previous = vertcat(horizontal_stack_sqrt_Sigma,horizontal_stack_sqrt_P)
           
@@ -512,30 +537,63 @@ class UKF_SNMPC:
                         ubg.append(np.zeros(1)) 
             
             Sigma_data = np.resize(np.array([],dtype=SX),(nk+1,nd,nd))
-            
-            for k in range(nk+1):
-                Sigma_true = mtimes(transpose(Sigma_chol[k]),Sigma_chol[k])
-                for i in range(nd):
-                    for j in range(nd):
-                        Sigma_data[k][i][j] = Sigma_true[i,j]
         
-        x_hatfcn = Function('x_hatfcn',[V],[x_hat[0]])
-        Sigmafcn = Function('Sigmafcn',[V],[mtimes(Sigma_chol[0].T,Sigma_chol[0])])
+        if type(Sigma_chol) is not SX:
+            Sigma_chol_list = []
+            for v1, val1 in enumerate(Sigma_chol):
+                Sigma_chol_SX = SX.sym('Sigma_chol_SX'+str(v1),nd,nd)
+                for v2, val2 in enumerate(val1):
+                    for v3, val3 in enumerate(val2):
+                        Sigma_chol_SX[v2,v3] = val3
+                Sigma_chol_list +=  [Sigma_chol_SX]
+        else:
+            Sigma_chol_SX = Sigma_chol
+
+        for k in range(nk+1):
+            Sigma_true = mtimes(transpose(Sigma_chol_list[k]),Sigma_chol_list[k])
+            for i in range(nd):
+                for j in range(nd):
+                    Sigma_data[k][i][j] = Sigma_true[i,j]
+        
+        x_hat_0 = SX.sym('x_hat_0',nd)
+        for v, val in enumerate(x_hat[0]):
+            x_hat_0[v] = val
+
+        x_hatfcn = Function('x_hatfcn',[V],[x_hat_0])
+        Sigmafcn = Function('Sigmafcn',[V],[mtimes(Sigma_chol_list[0].T,Sigma_chol_list[0])])
         
         return g, lbg, ubg, Sigmapoints_a, x_hatfcn, Sigmafcn 
     
     def set_probability_constraints(self):   
-        Sigma_chol, xd, nk           = self.Sigma_chol, self.xd, self.nk
+        Sigma_chol, xd, nk, nd       = self.Sigma_chol, self.xd, self.nk, self.nd
         x_hat, g, lbg, ubg           = self.x_hat, self.g, self.lbg, self.ubg
         ngp, gpfcn, pgp              = self.ngp, self.gpfcn, self.pgp
         ngt, gtfcn, pgt              = self.ngt, self.gtfcn, self.pgt
         
+        if type(Sigma_chol) is not SX:
+            Sigma_chol_list = []
+            for v1, val1 in enumerate(Sigma_chol):
+                Sigma_chol_SX = SX.sym('Sigma_chol_SX'+str(v1),nd,nd)
+                for v2, val2 in enumerate(val1):
+                    for v3, val3 in enumerate(val2):
+                        Sigma_chol_SX[v2,v3] = val3
+                Sigma_chol_list +=  [Sigma_chol_SX]
+        else:
+            Sigma_chol_SX = Sigma_chol
+
+        x_hat_list = []
+        for v1, val1 in enumerate(x_hat):
+            x_hat_SX = SX.sym('x_hat'+str(v1),val1.size)
+            for v2, val2 in enumerate(val1):
+                x_hat_SX[v2] = val2
+            x_hat_list += [x_hat_SX]
+
         for k in range(1,nk+1):
             for i in range(ngp):
                 ke        = sqrt((1-pgp[i])/pgp[i])
-                Sigma_cov = mtimes(transpose(Sigma_chol[k]),Sigma_chol[k])
-                meangp    = gpfcn(x_hat[k])[i] 
-                Jgp       = jacobian(gpfcn(x_hat[k])[i],x_hat[k])
+                Sigma_cov = mtimes(transpose(Sigma_chol_list[k]),Sigma_chol_list[k])
+                meangp    = gpfcn(x_hat_list[k])[i] 
+                Jgp       = jacobian(gpfcn(x_hat_list[k])[i],x_hat_list[k])
                 vargp     = mtimes(mtimes(Jgp,Sigma_cov),Jgp.T) 
                 g        += [meangp + sqrt(vargp+1e-8)*ke]
                 lbg.append([-inf])
@@ -543,9 +601,9 @@ class UKF_SNMPC:
         
         for i in range(ngt):
             ke        = sqrt((1-pgt[i])/pgt[i])
-            Sigma_cov = mtimes(transpose(Sigma_chol[nk]),Sigma_chol[nk])
-            meangt    = gtfcn(x_hat[nk])[i]
-            Jgt       = jacobian(gtfcn(x_hat[nk])[i],x_hat[nk])
+            Sigma_cov = mtimes(transpose(Sigma_chol_list[nk]),Sigma_chol_list[nk])
+            meangt    = gtfcn(x_hat_list[nk])[i]
+            Jgt       = jacobian(gtfcn(x_hat_list[nk])[i],x_hat_list[nk])
             vargt     = mtimes(mtimes(Jgt,Sigma_cov),Jgt.T) 
             g        += [meangt + sqrt(vargt+1e-8)*ke]
             lbg.append([-inf])
@@ -558,15 +616,33 @@ class UKF_SNMPC:
         ns, XD, nd, p_s, R    = self.ns, self.XD, self.nd, self.p_s, self.R
         Obj_M, Obj_L , U      = self.Obj_M, self.Obj_L, self.U
         
+        if type(Sigma_chol) is not SX:
+            Sigma_chol_list = []
+            for v1, val1 in enumerate(Sigma_chol):
+                Sigma_chol_SX = SX.sym('Sigma_chol_SX'+str(v1),nd,nd)
+                for v2, val2 in enumerate(val1):
+                    for v3, val3 in enumerate(val2):
+                        Sigma_chol_SX[v2,v3] = val3
+                Sigma_chol_list +=  [Sigma_chol_SX]
+        else:
+            Sigma_chol_SX = Sigma_chol
+
+        x_hat_list = []
+        for v1, val1 in enumerate(x_hat):
+            x_hat_SX = SX.sym('x_hat'+str(v1),val1.size)
+            for v2, val2 in enumerate(val1):
+                x_hat_SX[v2] = val2
+            x_hat_list += [x_hat_SX]
+
         delta_U          = SX.zeros(1)
         ObjL             = SX.zeros(1)
-        Sigma_cov        = mtimes(transpose(Sigma_chol[nk]),Sigma_chol[nk])
+        Sigma_cov        = mtimes(transpose(Sigma_chol_list[nk]),Sigma_chol_list[nk])
         for k in range(nk):
                 delta_U += mtimes(mtimes(transpose(U[k+1]-U[k]),R),U[k+1]-U[k])*p_s[k]
         for k in range(1,nk+1):
-            ObjL        += Obj_L(x_hat[k],U[k])*p_s[k]
+            ObjL        += Obj_L(x_hat_list[k],U[k])*p_s[k]
         
-        Obj              = delta_U + Obj_M(x_hat[-1],U[-1]) + ObjL
+        Obj              = delta_U + Obj_M(x_hat_list[-1],U[-1]) + ObjL
         
         return Obj
     
