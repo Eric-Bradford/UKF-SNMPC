@@ -43,21 +43,21 @@ def DAE_system():
     # Define vectors with names of states
     states     = ['CA','CB','CC','T','Vol'] 
     nd         = len(states)
-    xd         = SX.sym('xd',nd)  
+    xd         = MX.sym('xd',nd)  
     for i in range(nd):
         globals()[states[i]] = xd[i]
     
     # Define vectors with names of algebraic variables
     algebraics = ['r1','r2'] 
     na         = len(algebraics)
-    xa         = SX.sym('xa',na)  
+    xa         = MX.sym('xa',na)  
     for i in range(na):
         globals()[algebraics[i]] = xa[i]
     
     # Define vectors with banes of input variables
     inputs     = ['F','T_a']
     nu         = len(inputs)
-    u          = SX.sym("u",nu)
+    u          = MX.sym("u",nu)
     for i in range(nu):
         globals()[inputs[i]] = u[i]
     
@@ -68,16 +68,16 @@ def DAE_system():
                  1.25,420.,400.]
     nmp       = len(modpar)
     for i in range(nmp):
-        globals()[modpar[i]] = SX(modparval[i])
+        globals()[modpar[i]] = MX(modparval[i])
     
     # Uncertain parameter names with mean and covariance matrix 
     unpar = ['CA0','A2','UA','N0H2S04']
     nun   = len(unpar)
     MeanP = np.array([4.,0.08,4.5,100.])
     CovP  = [0.1,0.00016,0.2,5.]*diag(np.ones(nun))
-    xu    = SX.sym('xu',nun)  
+    xu    = MX.sym('xu',nun)  
     for i in range(nun):
-        globals()[unpar[i]] = xu[i]
+        globals()[unpar[i]] = MX(xu[i])
     
     # Actual mean and covariance of differential states at t = 0        
     Meanx0   = np.array([0.5,1.,0.1,290.,100.])
@@ -113,26 +113,26 @@ def DAE_system():
     u_max      = np.array([250.,500.]) # upper bound of inputs
  
     # Define objective (in expectation) to be minimized
-    t           = SX.sym('t')
+    t           = MX.sym('t')
     Obj_M       = Function('mayer',[xd,u],[-CC*Vol]) # Mayer term
     Obj_L       = Function('lagrange',[xd,u],[0.])   # Lagrange term
     R           = [2e-4,5e-5]*diag(np.ones(nu))          # Control change penality 
      
     # Define path constraint functions g(x) <= 0
     gpdef      = vertcat(T-420.,Vol-800.)       # g(x)
-    ngp        = SX.size(gpdef)[0]              # Number of constraints
+    ngp        = MX.size(gpdef)[0]              # Number of constraints
     gpfcn      = Function('gpfcn',[xd],[gpdef]) # Function definition
-    pgp        = SX([0.05,0.05])                # Probability of constraint violation
+    pgp        = MX([0.05,0.05])                # Probability of constraint violation
     
     # Define terminal constraint functions g(x) <= 0
-    gtdef = vertcat(SX())                  # g(x) 
-    ngt   = SX.size(gtdef)[0]              # Number of constraints                  
+    gtdef = vertcat(MX())                  # g(x) 
+    ngt   = MX.size(gtdef)[0]              # Number of constraints                  
     gtfcn = Function('gtfcn',[xd],[gtdef]) # Function definition
-    pgt   = SX([])                         # Probability of constraint violation
+    pgt   = MX([])                         # Probability of constraint violation
     
     # Measurement model
     measfcn = vertcat(CA,CB,T)                   # h(x) 
-    nm      = SX.size(measfcn)[0]                # Number of measurements  
+    nm      = MX.size(measfcn)[0]                # Number of measurements  
     hfcn    = Function('hfcn',[xd,xu],[measfcn]) # Function definition
     Sigma_v = [1e-3,1e-3,1e-2]*diag(np.ones(nm))   # Measurements noise covariance matrix
     

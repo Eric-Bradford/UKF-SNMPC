@@ -18,8 +18,8 @@ class UKF_SNMPC:
         self.simulation_time, self.opts, self.number_of_repeats, self.alpha,\
         self.beta, self.kappa, self.robust_horizon = specifications()
         self.h               = self.tf/self.nk/self.nicp
-        self.nd, self.na     = SX.size(self.xd)[0], SX.size(self.xa)[0] 
-        self.nu , self.nun   = SX.size(self.u)[0], SX.size(self.xu)[0]
+        self.nd, self.na     = MX.size(self.xd)[0], MX.size(self.xa)[0] 
+        self.nu , self.nun   = MX.size(self.u)[0], MX.size(self.xu)[0]
         self.n_L             = self.nd + self.nun
         self.ns, self.deltat = 2*self.n_L+1, self.tf/self.nk
         
@@ -53,7 +53,7 @@ class UKF_SNMPC:
         D = np.zeros(deg+1)         # Coefficients of the continuity equation
         
         # All collocation time points
-        tau = SX.sym("tau") # Collocation point
+        tau = MX.sym("tau") # Collocation point
         tau_root = [0] + collocation_points(deg,cp)
         T = np.zeros((nk,deg+1))
         for i in range(nk):
@@ -79,9 +79,9 @@ class UKF_SNMPC:
     
     def model_fcn(self):
         xd, xa, u, xu, ODEeq, Aeq = self.xd, self.xa, self.u, self.xu, self.ODEeq, self.Aeq
-        t     =   SX.sym("t")               
-        p_s   =   SX.sym("p_s")             
-        xddot =   SX.sym("xddot",self.nd)  
+        t     =   MX.sym("t")               
+        p_s   =   MX.sym("p_s")             
+        xddot =   MX.sym("xddot",self.nd)  
         
         res   = []
         for i in range(self.nd):
@@ -129,8 +129,8 @@ class UKF_SNMPC:
         NV = NXD+NXA+NU
         
         # NLP variable vector
-        V   = SX.sym("V",NV*ns-NU*(ns-1)+nd*(nk+1)+nd*nd*(nk+1))
-        con = SX.sym("con",nu+nd+nd*nd+nm+nk+1)
+        V   = MX.sym("V",NV*ns-NU*(ns-1)+nd*(nk+1)+nd*nd*(nk+1))
+        con = MX.sym("con",nu+nd+nd*nd+nm+nk+1)
         
         # All variables with bounds and initial guess
         vars_lb = np.zeros(NV*ns-NU*(ns-1)+nd*(nk+1)+nd*nd*(nk+1))
@@ -139,18 +139,18 @@ class UKF_SNMPC:
         
         # differential states, algebraic states and control matrix definition after
         # discredization
-        XD = np.resize(np.array([],dtype=SX),(nk+1,nicp,deg+1,ns)) # NB: same name as above
-        XA = np.resize(np.array([],dtype=SX),(nk+1,nicp,deg,ns)) # NB: same name as above
-        U = np.resize(np.array([],dtype=SX),nk+1)
-        P = np.resize(np.array([],dtype=SX),ns)
-        Sigma_chol = np.resize(np.array([],dtype=SX),(nk+1,nd,nd))
-        x_hat = np.resize(np.array([],dtype=SX),(nk+1,nd))
-        x_hat_a = np.resize(np.array([],dtype=SX),(nk+1))
-        sqrt_Sigma = np.resize(np.array([],dtype=SX),(nk+1))
-        sqrt_Sigma_a = np.resize(np.array([],dtype=SX),(nk+1))
-        phi_before = np.resize(np.array([],dtype=SX),2*n_L+1)
-        Sigmapoints_a = np.resize(np.array([],dtype=SX),(nk+1,ns))
-        xf_k = np.resize(np.array([],dtype=SX),(nk+1))
+        XD = np.resize(np.array([],dtype=MX),(nk+1,nicp,deg+1,ns)) # NB: same name as above
+        XA = np.resize(np.array([],dtype=MX),(nk+1,nicp,deg,ns)) # NB: same name as above
+        U = np.resize(np.array([],dtype=MX),nk+1)
+        P = np.resize(np.array([],dtype=MX),ns)
+        Sigma_chol = np.resize(np.array([],dtype=MX),(nk+1,nd,nd))
+        x_hat = np.resize(np.array([],dtype=MX),(nk+1,nd))
+        x_hat_a = np.resize(np.array([],dtype=MX),(nk+1))
+        sqrt_Sigma = np.resize(np.array([],dtype=MX),(nk+1))
+        sqrt_Sigma_a = np.resize(np.array([],dtype=MX),(nk+1))
+        phi_before = np.resize(np.array([],dtype=MX),2*n_L+1)
+        Sigmapoints_a = np.resize(np.array([],dtype=MX),(nk+1,ns))
+        xf_k = np.resize(np.array([],dtype=MX),(nk+1))
         
         return NU, NV, V, vars_lb, vars_ub, vars_init, XD, XA, U, P, Sigma_chol,\
         x_hat, x_hat_a, sqrt_Sigma, sqrt_Sigma_a, phi_before, Sigmapoints_a,\
@@ -276,7 +276,7 @@ class UKF_SNMPC:
         p_s, ns, C, h, U        = self.p_s, self.ns, self.C, self.h, self.U
         g, lbg, ubg             = self.g, self.lbg, self.ubg
         
-        t   = SX.sym('t')
+        t   = MX.sym('t')
         
         for k in range(nk+1):
             for l in range(ns):
@@ -315,7 +315,7 @@ class UKF_SNMPC:
         return g, lbg, ubg, no_dynamic_constraints
          
     def cholupdate(self,R1,x1,sign1):
-      p1 = SX.size(x1)[0]
+      p1 = MX.size(x1)[0]
       x1 = transpose(x1)
       for k in range(p1):
         if sign1 == '+':
@@ -335,8 +335,8 @@ class UKF_SNMPC:
       return R1
     
     def Unscented_transformation(self,nu_m,nu_c,nd,sqrt_Sigma_w,ns,XD,k,nicp,deg,U):
-        Transformed_sampling  = SX.zeros(nd,ns)
-        Sum_mean              = SX.zeros(nd,1)
+        Transformed_sampling  = MX.zeros(nd,ns)
+        Sum_mean              = MX.zeros(nd,1)
         cholupdate            = self.cholupdate
     
         for i in range(ns):
@@ -350,7 +350,12 @@ class UKF_SNMPC:
         residual = mtimes(Sum_mean_matrix1,diag(sqrt(fabs(nu_c))))
         
         Aux = transpose(horzcat(residual[:,1:ns],sqrt_Sigma_w))
-        Sigma_prediction_a = qr(Aux)[1]
+        
+        Aux_sym = SX.sym('Aux_sym',Aux.size())
+        qr_output = qr(Aux_sym)[1]
+        qr_new = Function('qr_new',[Aux_sym],[qr_output])
+
+        Sigma_prediction_a = qr_new(Aux)[1]
         
         if nu_c[0] < 0:
             Sigma_prediction = cholupdate(Sigma_prediction_a,residual[:,0],'-')
@@ -361,8 +366,8 @@ class UKF_SNMPC:
     
     def Unscented_transformation_m(self,nu_m,nu_c,nm,sqrt_Sigma_v,ns,XD,k,nicp,deg,hfcn):
         nd                     = self.nd
-        Sum_mean_m             = SX.zeros(nm,1)
-        Transformed_sampling_m = SX.zeros(nm,ns)
+        Sum_mean_m             = MX.zeros(nm,1)
+        Transformed_sampling_m = MX.zeros(nm,ns)
         cholupdate             = self.cholupdate
         
         for i in range(ns):
@@ -393,18 +398,18 @@ class UKF_SNMPC:
         x_hat_a_previous = vertcat(x_hat_before,MeanP)
         
         sqrt_Sigma_previous         = Sigma_before_chol
-        horizontal_stack_sqrt_Sigma = horzcat(sqrt_Sigma_previous,SX.zeros(nd,nun))
-        horizontal_stack_sqrt_P     = horzcat(SX.zeros(nun,nd),sqrt_CovP)
+        horizontal_stack_sqrt_Sigma = horzcat(sqrt_Sigma_previous,MX.zeros(nd,nun))
+        horizontal_stack_sqrt_P     = horzcat(MX.zeros(nun,nd),sqrt_CovP)
         sqrt_Sigma_a_previous = vertcat(horizontal_stack_sqrt_Sigma,horizontal_stack_sqrt_P)
           
-        x_hat_vector = SX.zeros((n_L,(ns-1)//2))  
+        x_hat_vector = MX.zeros((n_L,(ns-1)//2))  
         for i in range((ns-1)//2):
           x_hat_vector[:,i] =  x_hat_a_previous
           
         Sigmapoint_matrix = sqrt(n_L+lambda_ukf)*sqrt_Sigma_a_previous
         Sigmapoints_aug = horzcat(x_hat_a_previous,x_hat_vector + Sigmapoint_matrix, \
         x_hat_vector - Sigmapoint_matrix) 
-        Sigmapoints = np.resize(np.array([],dtype=SX),ns)
+        Sigmapoints = np.resize(np.array([],dtype=MX),ns)
         
         for l in range(2*n_L+1):
             Sigmapoints[l] = Sigmapoints_aug[:,l]
@@ -457,7 +462,7 @@ class UKF_SNMPC:
         nu_m,nu_c,nm,sqrt_Sigma_v,ns,XD,k,nicp,deg,hfcn)        
         
         Sigma_x_y = mtimes(mtimes(Transformed_deviationsp,diag(nu_c)),transpose(Transformed_deviationsm))
-        invSigma_y_y = solve(Sigma_y_y,SX.eye(nm))
+        invSigma_y_y = solve(Sigma_y_y,MX.eye(nm))
         
         # Measurement update
         K = mtimes(mtimes(Sigma_x_y,invSigma_y_y),transpose(invSigma_y_y))
@@ -511,7 +516,7 @@ class UKF_SNMPC:
                         lbg.append(np.zeros(1))
                         ubg.append(np.zeros(1)) 
             
-            Sigma_data = np.resize(np.array([],dtype=SX),(nk+1,nd,nd))
+            Sigma_data = np.resize(np.array([],dtype=MX),(nk+1,nd,nd))
             
             for k in range(nk+1):
                 Sigma_true = mtimes(transpose(Sigma_chol[k]),Sigma_chol[k])
@@ -558,8 +563,8 @@ class UKF_SNMPC:
         ns, XD, nd, p_s, R    = self.ns, self.XD, self.nd, self.p_s, self.R
         Obj_M, Obj_L , U      = self.Obj_M, self.Obj_L, self.U
         
-        delta_U          = SX.zeros(1)
-        ObjL             = SX.zeros(1)
+        delta_U          = MX.zeros(1)
+        ObjL             = MX.zeros(1)
         Sigma_cov        = mtimes(transpose(Sigma_chol[nk]),Sigma_chol[nk])
         for k in range(nk):
                 delta_U += mtimes(mtimes(transpose(U[k+1]-U[k]),R),U[k+1]-U[k])*p_s[k]
@@ -587,11 +592,11 @@ class UKF_SNMPC:
 
         ODE = []
         for i in range(self.nd):
-            ODE = vertcat(ODE,substitute(ODEeq[i],vertcat(u,xu),vertcat(SX(uNMPC),SX(xu_real)))) 
+            ODE = vertcat(ODE,substitute(ODEeq[i],vertcat(u,xu),vertcat(MX(uNMPC),MX(xu_real)))) 
         
         A = []
         for i in range(self.na):
-            A   = vertcat(A,substitute(Aeq[i],vertcat(u,xu),vertcat(SX(uNMPC),SX(xu_real))))
+            A   = vertcat(A,substitute(Aeq[i],vertcat(u,xu),vertcat(MX(uNMPC),MX(xu_real))))
         
         dae = {'x':xd, 'z':xa, 'ode':ODE, 'alg':A}        
         I = integrator('I', 'idas', dae, {'t0':t0, 'tf':tf, 'abstol':1e-10, \
