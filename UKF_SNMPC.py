@@ -330,7 +330,7 @@ class UKF_SNMPC:
               R1[k,k+1:p1] = (R1[k,k+1:p1] + s*x1[k+1:p1])/c
             elif sign1 == '-':
               R1[k,k+1:p1] = (R1[k,k+1:p1] - s*x1[k+1:p1])/c
-            x1[k+1:p1]= c*x1[k+1:p1] - s*R1[k,k+1:p1]
+            x1[:,k+1:p1]= c*x1[k+1:p1] - s*R1[k,k+1:p1]
             
       return R1
     
@@ -355,7 +355,7 @@ class UKF_SNMPC:
         qr_output = qr(Aux_sym)[1]
         qr_new = Function('qr_new',[Aux_sym],[qr_output])
 
-        Sigma_prediction_a = qr_new(Aux)[1]
+        Sigma_prediction_a = qr_new(Aux)
         
         if nu_c[0] < 0:
             Sigma_prediction = cholupdate(Sigma_prediction_a,residual[:,0],'-')
@@ -383,7 +383,11 @@ class UKF_SNMPC:
         residual_m = mtimes(Sum_mean1_matrix_m,diag(sqrt(fabs(nu_c))))
         
         Aux = transpose(horzcat(residual_m[:,1:ns],sqrt_Sigma_v))
-        Sigma_prediction_a_m = qr(Aux)[1]
+        Aux_sym = SX.sym('Aux_sym',Aux.size())
+        qr_output = qr(Aux_sym)[1]
+        qr_new = Function('qr_new',[Aux_sym],[qr_output])
+
+        Sigma_prediction_a_m = qr_new(Aux)
         Sigma_prediction_a_m = Sigma_prediction_a_m[:nm,:]
         
         if nu_c[0] < 0:
